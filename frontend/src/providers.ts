@@ -50,7 +50,8 @@ export const api = {
     proposalCanceledSponsoredInvestor: prefix + '/proposal-canceled-sponsored-investor',
     proposalClosedSponsoredInvestor: prefix + '/proposal-closed-sponsored-investor',
     proposalRejectedSponsoredInvestor: prefix + '/proposal-rejected-sponsored-investor',
-
+    proposal: prefix + '/proposal',
+    getProposalCompleted: prefix + '',
 }
 
 export const socialAccounts = {

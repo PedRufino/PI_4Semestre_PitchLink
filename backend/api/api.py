@@ -28,6 +28,7 @@ import stripe
 import os
 from django.conf import settings
 from decimal import Decimal
+from django.db.models import Q
 
 logging.basicConfig(
     level=logging.INFO,
@@ -2082,6 +2083,60 @@ def get_proposal_rejected_sponsored(request):
             'porcentagem_cedida': proposal.porcentagem_cedida,
             'accepted': proposal.accepted,
             'status': proposal.status
+        })
+    
+    return 200, {'data': data}
+
+@api.get('/proposal', auth=AuthBearer(), response={200: dict, 404: dict})
+def get_proposal_open_sponsored(request):
+    try:
+        user = request.auth
+    except User.DoesNotExist:
+        return 404, {'message': 'Conta não encontrada'}
+    
+    proposals = ProposalInnovation.objects.filter(
+        Q(investor=user) | Q(sponsored=user),
+        status='accepted', accepted=True
+    )
+    
+    if not proposals.exists():
+        return 404, {'message': 'Nenhuma proposta pendente encontrada'}
+    
+    base_url = f"{request.scheme}://{request.get_host()}"
+    
+    data = []
+    for proposal in proposals:
+        investor_img_url = None
+        if proposal.investor.profile_picture and proposal.investor.profile_picture.name:
+            investor_img_url = f"{base_url}{proposal.investor.profile_picture.url}"
+        elif proposal.investor.profile_picture_url:
+            investor_img_url = proposal.investor.profile_picture_url
+        
+        sponsored_img_url = None
+        if proposal.sponsored.profile_picture and proposal.sponsored.profile_picture.name:
+            sponsored_img_url = f"{base_url}{proposal.sponsored.profile_picture.url}"
+        elif proposal.sponsored.profile_picture_url:
+            sponsored_img_url = proposal.sponsored.profile_picture_url
+        
+        data.append({
+            'id': proposal.id,
+            'created': proposal.created.isoformat(),
+            'modified': proposal.modified.isoformat(),
+            'investor_id': proposal.investor.id,
+            'investor_name': proposal.investor.first_name,
+            'investor_img_url': investor_img_url,
+            'sponsored_id': proposal.sponsored.id,
+            'sponsored_name': proposal.sponsored.first_name,
+            'sponsored_img_url': sponsored_img_url,
+            'innovation_id': proposal.innovation.id,
+            'innovation_name': proposal.innovation.nome,
+            'descricao': proposal.descricao,
+            'investimento_minimo': proposal.investimento_minimo,
+            'porcentagem_cedida': proposal.porcentagem_cedida,
+            'accepted': proposal.accepted,
+            'status': proposal.status,
+            'user_role': 'investor' if proposal.investor == user else 'sponsored',
+            'paid': proposal.paid,
         })
     
     return 200, {'data': data}

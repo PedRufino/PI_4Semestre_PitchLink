@@ -25,6 +25,7 @@ import { PaymentComponent } from './modules/user/components/payment/payment.comp
 import { SetupPropostasComponent } from './modules/views/setup-propostas/setup-propostas.component';
 import { SetupEnviadasComponent } from './modules/views/setup-enviadas/setup-enviadas.component';
 import { FinanceiroComponent } from './modules/views/financeiro/financeiro.component';
+import { NegociosFechadosComponent } from './modules/views/negocios-fechados/negocios-fechados.component';
 
 export const routes: Routes = [
     {
@@ -107,6 +108,11 @@ export const routes: Routes = [
                 title: 'Financeiro | PitchLink',
                 path:'financeiro', 
                 component: FinanceiroComponent
+            },
+            {
+                title: 'Negócios Fechados | PitchLink',
+                path:'negocios-fechados', 
+                component: NegociosFechadosComponent
             },
             {
                 path:'perfil', 

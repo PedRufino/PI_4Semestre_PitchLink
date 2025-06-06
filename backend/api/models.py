@@ -167,6 +167,7 @@ class ProposalInnovation(models.Model):
     investimento_minimo = models.CharField(_('Investimento Mínimo'), max_length=255, blank=True, null=True)
     porcentagem_cedida = models.CharField(_('Porcentagem Cedida'), max_length=255, blank=True, null=True)
     accepted = models.BooleanField('Aceito', default=False)
+    paid = models.BooleanField('Pago', default=False)
     status = models.CharField(_('Status'), max_length=50, choices=[
         ('pending', _('Pendente')),
         ('canceled', _('Cancelado')),
@@ -253,3 +254,51 @@ class CreditTransactions(models.Model):
     
     def get_amount_in_cents(self):
         return int(self.amount * 100)
+
+class ProposalPayment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', _('Pendente')),
+        ('processing', _('Processando')),
+        ('succeeded', _('Sucesso')),
+        ('failed', _('Falhou')),
+        ('cancelled', _('Cancelado')),
+    ]
+    
+    created = models.DateTimeField(_('Criado em'), auto_now_add=True)
+    modified = models.DateTimeField(_('Alterado em'), auto_now=True)
+    proposal = models.OneToOneField('ProposalInnovation', on_delete=models.CASCADE, related_name='payment')
+    investor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposal_payments')
+    amount = models.DecimalField(_('Valor do Investimento'), max_digits=15, decimal_places=2)
+    status = models.CharField(_('Status'), max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    class Meta:
+        verbose_name = _('Pagamento de Proposta')
+        verbose_name_plural = _('Pagamentos de Propostas')
+        ordering = ['-created']
+
+    def __str__(self):
+        return f"Pagamento R$ {self.amount} - {self.investor.first_name} - {self.proposal.innovation.nome}"
+    
+    def get_amount_in_cents(self):
+        return int(self.amount * 100)
+    
+    def process_payment(self):
+        if self.status != 'pending':
+            return False, "Pagamento já foi processado"
+        
+        if self.investor.balance < self.amount:
+            self.status = 'failed'
+            self.save()
+            return False, "Saldo insuficiente"
+        
+        self.investor.balance -= self.amount
+        self.investor.save()
+        
+        self.status = 'succeeded'
+        self.save()
+        
+        self.proposal.paid = True
+        self.proposal.save()
+        
+        return True, "Pagamento processado com sucesso"
+

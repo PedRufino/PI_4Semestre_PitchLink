@@ -481,4 +481,13 @@ postConfirmCreditPayment(plan: string, payment_intent_id: string): Observable<an
     })
   }
 
+  proposal(): Observable<any> {
+    const token = localStorage.getItem('jwt_token');
+    return this.http.get(`${this.baseUrl}${api.proposal}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+  }
+
 }
